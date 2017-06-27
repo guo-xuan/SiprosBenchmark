@@ -213,7 +213,7 @@ def read_percolator_results(input_file):
             name_list = word_list[0].split('_')
             scan_id = int(name_list[-3])
             charge_id = name_list[-2]
-            iProbability = -float(word_list[3])
+            score_float = float(word_list[1])
             identified_pep = word_list[4]
             identified_pep = identified_pep[2:-2]
             identified_pep = M_start_re.sub('M*', identified_pep)
@@ -226,10 +226,10 @@ def read_percolator_results(input_file):
             if protein_type_int == Settings.LabelRevReserve:
                 continue
             if scan_id in psm_dict:
-                if iProbability > psm_dict[scan_id][1]:
-                    psm_dict[scan_id] = (protein_type_int, iProbability, scan_id, charge_id, identified_pep, original_pep, protein_l)
+                if score_float > psm_dict[scan_id][1]:
+                    psm_dict[scan_id] = (protein_type_int, score_float, scan_id, charge_id, identified_pep, original_pep, protein_l)
             else:
-                psm_dict[scan_id] = (protein_type_int, iProbability, scan_id, charge_id, identified_pep, original_pep, protein_l)
+                psm_dict[scan_id] = (protein_type_int, score_float, scan_id, charge_id, identified_pep, original_pep, protein_l)
     
     for _key, value in psm_dict.items():
         psm_list.append(value)
