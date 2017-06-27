@@ -6,28 +6,21 @@ Created on Jun 27, 2017
 
 import sys
 
-label_train_str = 'Rev_' # 'Rev_'
-label_test_str = 'TestRev_' # 'Shu_'
-label_reserve_str = 'Rev_2_'
-
-LabelFwd = 1
-LabelRevTrain = 2
-LabelRevReserve = 3
-LabelTest = 4
+import Settings
 
 # # Decoy Reverse Forward protein
 def get_protein_type(protein_split_list):
     for one_protein in protein_split_list:
-        if not (one_protein.startswith(label_train_str) or one_protein.startswith(label_test_str)):
-            return LabelFwd
+        if not (one_protein.startswith(Settings.label_train_str) or one_protein.startswith(Settings.label_test_str)):
+            return Settings.LabelFwd
     for one_protein in protein_split_list:
-        if one_protein.startswith(label_test_str):
-            return LabelTest
-    if label_reserve_str != '':
+        if one_protein.startswith(Settings.label_test_str):
+            return Settings.LabelTest
+    if Settings.label_reserve_str != '':
         for one_protein in protein_split_list:
-            if one_protein.startswith(label_reserve_str):
-                return LabelRevReserve
-    return LabelRevTrain
+            if one_protein.startswith(Settings.label_reserve_str):
+                return Settings.LabelRevReserve
+    return Settings.LabelRevTrain
 
 # TestRev should be postive label
 # internal missed cleavage site should be less than 4
@@ -42,7 +35,7 @@ def correct_pin(input_file_str, output_file_str):
                     continue
                 protein_list = split_list[29:]
                 protein_type = get_protein_type(protein_list)
-                if protein_type == LabelRevTrain or protein_type == LabelRevReserve:
+                if protein_type == Settings.LabelRevTrain or protein_type == Settings.LabelRevReserve:
                     split_list[1] = "-1"
                 else:
                     split_list[1] = "1"
