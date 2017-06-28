@@ -7,10 +7,12 @@ Created on Jun 27, 2017
 import sys, os, re
 from collections import namedtuple
 
-label_train_str = 'Rev_' # 'Rev_'
-label_test_str = 'TestRev_' # 'Shu_'
+label_train_str = 'Rev_'
+label_test_str = 'TestRev_'
 label_reserve_str = 'Rev_2_'
+label_ecoli_str = 'lcl'
 
+LabelEcoli = 0
 LabelFwd = 1
 LabelRevTrain = 2
 LabelRevReserve = 3
@@ -24,6 +26,25 @@ def get_protein_type(protein_split_list):
     for one_protein in protein_split_list:
         if one_protein.startswith(label_test_str):
             return LabelTest
+    if label_reserve_str != '':
+        for one_protein in protein_split_list:
+            if one_protein.startswith(label_reserve_str):
+                return LabelRevReserve
+    return LabelRevTrain
+
+def get_protein_type_ecoli(protein_split_list):
+    for one_protein in protein_split_list:
+        if one_protein.startswith(label_ecoli_str):
+            return LabelEcoli
+
+    for one_protein in protein_split_list:
+        if not (one_protein.startswith(label_train_str) or one_protein.startswith(label_test_str)):
+            return LabelFwd
+    
+    for one_protein in protein_split_list:
+        if one_protein.startswith(label_test_str):
+            return LabelTest
+        
     if label_reserve_str != '':
         for one_protein in protein_split_list:
             if one_protein.startswith(label_reserve_str):

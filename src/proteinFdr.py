@@ -275,7 +275,7 @@ def get_pep_score_targetmatch(run_num_dict):
         # get data
         for pep_line in fr:
             
-            if pep_line.startswith('#'):
+            if pep_line.startswith('#') or pep_line.startswith("IdentifiedPeptide"):
                 continue
             
             # adapt class PepOutFields
@@ -348,7 +348,7 @@ def read_run_files(run_num_dict, pep_score_cutoff=None):
         # get data
         for pep_line in pep_reader:
             
-            if pep_line.startswith('#'):
+            if pep_line.startswith('#') or pep_line.startswith("IdentifiedPeptide"):
                 continue
             
             pep_line = pep_line.split('\t')
@@ -439,7 +439,7 @@ def read_run_files(run_num_dict, pep_score_cutoff=None):
         # get data
         for psm_line in psm_reader:
             
-            if psm_line.startswith('#'):
+            if psm_line.startswith('#') or psm_line.startswith("Filename"):
                 continue
             
             psm_line = psm_line.split('\t')
@@ -710,6 +710,32 @@ def check_decoy_match(ProteinNames, decoy_prefix):
 
     return TF
 
+## check decoy match
+def check_target_match(ProteinNames, target_prefix):
+
+    # match type (correct or decoy) and strip
+    match_type = ProteinNames
+    match_type_list = []
+
+    if match_type.startswith("{"):
+        # if starts with {}, then delete parenthesis { }
+        match_type = match_type[1:-1]
+        # sometimes multiple proteins
+        match_type_list = re.split(r"\s*[,]\s*", match_type.strip())
+    else:
+        match_type_list.append(match_type)
+    # TF -> True or False(decoy match)
+    TP = False
+
+    # for loop of proteins
+    for match_item in match_type_list:
+        # if at least one of matches is True, then match is True
+        if match_item.startswith(target_prefix):
+            TP = True 
+            break
+
+    return TP
+
 
 ## Report output files
 def report_output(config_dict,
@@ -720,7 +746,8 @@ def report_output(config_dict,
                   pro_pep_dict,
                   pep_pro_dict,
                   pro_greedy_list,
-                  fasta_ID_dict=None):
+                  fasta_ID_dict=None,
+                  target_prefix = 'lcl'):
 
     # get config value
     min_peptide_per_protein = int(config_dict[min_peptide_per_protein_str])
@@ -741,10 +768,15 @@ def report_output(config_dict,
     # total number of identified proteins
     total_proteins_after_filtering = len(pro_greedy_list)
     decoy_proteins_after_filtering = 0
+    true_target_proteins_after_filtering = 0
     for pro_one in pro_greedy_list:
         check_decoy_match_val = check_decoy_match(pro_one, decoy_prefix)
         if check_decoy_match_val is False:
             decoy_proteins_after_filtering += 1
+        if target_prefix is not None:
+            check_target_match_val = check_target_match(pro_one, target_prefix)
+            if check_target_match_val is True:
+                true_target_proteins_after_filtering += 1
     target_proteins_after_filtering = int(total_proteins_after_filtering) - int(decoy_proteins_after_filtering)
 
     # protein FDR
@@ -753,9 +785,9 @@ def report_output(config_dict,
         protein_fdr = divide(float(decoy_proteins_after_filtering), float(total_proteins_after_filtering))
     protein_fdr = PrettyFloat(protein_fdr)
     
-    print("{:,d} ({:.3f}%)".format(target_proteins_after_filtering, 3.0*100.0*float(decoy_proteins_after_filtering)/float(target_proteins_after_filtering)))
+    print("{:,d} ({:.3f}%) ({:,d})".format(target_proteins_after_filtering, 3.0*100.0*float(decoy_proteins_after_filtering)/float(target_proteins_after_filtering), true_target_proteins_after_filtering))
 
-    return ((3*100.0*float(decoy_proteins_after_filtering)/float(target_proteins_after_filtering)) , target_proteins_after_filtering)
+    return ((3*100.0*float(decoy_proteins_after_filtering)/float(target_proteins_after_filtering)) , target_proteins_after_filtering, true_target_proteins_after_filtering)
 
 
 ## +------+
@@ -765,8 +797,8 @@ def main(argv=None):
     # parse options
     # (working_dir, config_filename) = parse_options(argv)
 
-    working_dir = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/ecoli_new/fdr_0.02/"
-    config_filename = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Data/Configs/SiprosEnsemble/ecoli.cfg"
+    working_dir = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/SiprosEnsemble/soil/SiprosEnsemblePercolator/fdr_0.02/"
+    config_filename = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Data/Configs/SiprosEnsemble/soil.cfg"
 
     config_dict = parse_config(config_filename)
 
@@ -781,6 +813,7 @@ def main(argv=None):
     _base_out = get_base_out(pep_file_list, base_out_default, working_dir)
         
     protein_num_list = []
+    true_protein_num_list = []
             
     fdr_float = 0.0000
     pep_score_targetmatch_sorted_list = get_pep_score_targetmatch(run_num_dict)
@@ -796,7 +829,7 @@ def main(argv=None):
             (pep_data_dict, psm_data_dict, pro_pep_dict, pep_pro_dict) = read_run_files(run_num_dict, score_cutoff)
             (pro_greedy_list) = greedy_alg(config_dict, pro_pep_dict, pep_pro_dict)
             print(str(fdr))
-            (protein_fdr, protein_num) = report_output(config_dict,
+            (protein_fdr, protein_num, true_protein_num) = report_output(config_dict,
                                             run_num_dict,
                                             psm_run_num_dict,
                                             pep_data_dict,
@@ -808,14 +841,22 @@ def main(argv=None):
             if abs(protein_fdr - target_protein_fdr) < 0.01 or num_try > try_max:
                 print('Done')
                 protein_num_list.append(protein_num)
+                true_protein_num_list.append(true_protein_num)
                 break
             elif protein_fdr > target_protein_fdr:
                 increasing_rate /= 2.0
             else:
                 fdr_float += increasing_rate
                 
-    for protein_num in protein_num_list:
-        sys.stdout.write('{:,d}\t'.format(protein_num))
+    ecoli_mode = True
+    
+    if ecoli_mode:
+        for idx, protein_num in enumerate(protein_num_list):
+            sys.stdout.write('{:,d} '.format(protein_num))
+            sys.stdout.write('({:,d})\t'.format(true_protein_num_list[idx]))        
+    else:
+        for protein_num in protein_num_list:
+            sys.stdout.write('{:,d}\t'.format(protein_num))
     
 ## If this program runs as standalone, then exit.
 if __name__ == "__main__":
