@@ -60,7 +60,7 @@ LabelTest = 3
 LabelRevReserve = 4
 LabelNotEcoli = 5
 
-mass_tolerance = 0.03
+mass_tolerance = 0.09
 
 # # Class for PepOutFields object
 class PsmFields(namedtuple('PsmFields',
@@ -318,7 +318,7 @@ class PSM:
         elif type(psm_field).__name__ == 'PsmFields4':
             self.score_differential_list.extend(float(i) for i in psm_field[14:32])
             self.sRTime = psm_field.RetentionTime
-            self.fRtMeasured = float(self.sRTime)
+            # self.fRtMeasured = float(self.sRTime)
             self.DeltaP = psm_field.DeltaP 
             self.iLocalRank = int(psm_field.Rank)
         else:
@@ -2934,6 +2934,7 @@ def logistic_regression_no_category(psm_dict, psm_list, psm_neg_list, fdr_given=
     negative_int = 0
     bDisableLocalRank = False
     if len(psm_list) < 800000:
+        print("xxxyyy")
         bDisableLocalRank = True
     for oPsm in psm_list:
         if len(oPsm.feature_list) != num_feature_int:
@@ -2996,10 +2997,12 @@ def logistic_regression_no_category(psm_dict, psm_list, psm_neg_list, fdr_given=
                                              verbose=0, 
                                              warm_start=False, 
                                              n_jobs=-1)
+    
+    # logreg = linear_model.ElasticNet()
     logreg.fit(train_data_np, train_label_np)
 
     for i in range(len(feature_selection_list)):
-        sys.stdout.write('%.3f\n' % logreg.coef_[0][i])
+        sys.stdout.write('%f\n' % logreg.coef_[0][i])
     
     sys.stdout.write('\n')
 
@@ -4246,7 +4249,7 @@ def generate_Prophet_features_test(lPsm, config_dict):
             oPsm.UPSC = 1
         else:
             oPsm.UPSC = 0
-        oPsm.SPSC = max_linked_unique_per_psm #+ max_linked_shared_per_psm
+        oPsm.SPSC = max_linked_unique_per_psm # + max_linked_shared_per_psm
         # oPsm.SPSC = float(max_linked_unique_per_psm)/float(len(oPsm.protein_list)) + float(max_linked_shared_per_psm)/float(len(oPsm.protein_list))
         # oPsm.SPSC = max_per_psm
         
@@ -4457,10 +4460,12 @@ def generate_psm_pep_txt(input_file, out_folder, psm_filtered_list):
                     'ProteinCount',  # 16
                     'TargetMatch']  # 17
         fw.write('\t'.join(psm_out_list) + '\n')
+        psm_type_list = [0, 0, 0, 0] # unanimous, major, minor, discordant
         for oPsm in psm_filtered_list:
             if oPsm.RealLabel == LabelRevTrain:
                 continue 
             oPsm.clean_protein_name()
+            psm_type_list[oPsm.iLocalRank] += 1
             fw.write(oPsm.FileName)
             fw.write('\t')
             fw.write(str(oPsm.ScanNumber))
@@ -4500,6 +4505,9 @@ def generate_psm_pep_txt(input_file, out_folder, psm_filtered_list):
             else:
                 fw.write('F')
             fw.write('\n')
+            
+    print("U\tMajor\tMinor\tD")
+    print("{}\t{}\t{}\t{}".format(psm_type_list[0], psm_type_list[1], psm_type_list[2], psm_type_list[3]))
             
     # pep_sub_dict for preparing pep_out
     pep_sub_dict = {}    # initialize dict of list
@@ -4860,19 +4868,31 @@ def remark_concensus(psm_list):
         else:
             psm_dict[unique_id_str] = 1
     
-    psm_set = set()
+    psm_type_dict = {}
     for oPsm in psm_list:
         unique_id_str = oPsm.FileName + '_' + str(oPsm.ScanNumber) + '_' + oPsm.IdentifiedPeptide
+        scan_id = oPsm.FileName + '_' + str(oPsm.ScanNumber)
         count_int = psm_dict[unique_id_str]
-        oPsm.iLocalRank = 3 - count_int
-        if count_int == 2:
-            psm_set.add(oPsm.FileName + '_' + str(oPsm.ScanNumber))
+        if scan_id in psm_type_dict:
+            if psm_type_dict[scan_id] < count_int:
+                psm_type_dict[scan_id] = count_int
+        else:
+            psm_type_dict[scan_id] = count_int
     
     for oPsm in psm_list:
-        unique_id_str = oPsm.FileName + '_' + str(oPsm.ScanNumber)
-        if unique_id_str in psm_set:
-            if oPsm.iLocalRank == 2:
-                oPsm.iLocalRank = 3 # Mi
+        unique_id_str = oPsm.FileName + '_' + str(oPsm.ScanNumber) + '_' + oPsm.IdentifiedPeptide
+        scan_id = oPsm.FileName + '_' + str(oPsm.ScanNumber)
+        count_int = psm_dict[unique_id_str]
+        if count_int >= 3:
+            oPsm.iLocalRank = 0 # unanimous
+        elif count_int == 2:
+            oPsm.iLocalRank = 1 # major
+        else:
+            if psm_type_dict[scan_id] >= 2:
+                oPsm.iLocalRank = 2 # minor
+            else:
+                oPsm.iLocalRank = 3 # discordant
+
 
 def mass_filter(psm_list):
     psm_new_list = []
@@ -4936,12 +4956,12 @@ def main(argv=None):
     #test_random_forest(psm_dict, psm_list)
     del feature_selection_list[:]
     feature_selection_list.extend([1, 2, 3, 5, 15, 16, 17, 24, 26, 28]) #
-    # feature_selection_list.extend([1, 2, 3, 5, 24, 25, 26, 27, 28, 29]) #
+    # feature_selection_list.extend([1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]) #
     # psm_filtered_list = logistic_regression(psm_dict, psm_list)
     # deep learning
     # psm_filtered_list = test_DeepLearning(psm_dict, psm_list, psm_neg_list, 0.01/3, None)
     
-    psm_filtered_list = logistic_regression_no_category(psm_dict, psm_list, psm_neg_list, 0.005/3, None, output_folder, input_file, config_dict)
+    psm_filtered_list = logistic_regression_no_category(psm_dict, psm_list, psm_neg_list, 0.01/3, None, output_folder, input_file, config_dict)
     # logistic_regression_2_LR(psm_dict, psm_list, psm_neg_list, 0.01, None, output_folder, input_file)
     # train bias test
     # psm_filtered_list = test_train_bias(psm_dict, psm_list, psm_neg_list, 0.01, None)

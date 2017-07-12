@@ -4,7 +4,7 @@ Created on Jun 27, 2017
 @author: xgo
 '''
 
-import sys, os, re
+import sys, os, re, math
 from collections import namedtuple
 
 label_train_str = 'Rev_'
@@ -55,11 +55,21 @@ def get_protein_type_ecoli(protein_split_list):
 def clean_protein(protein_list):
     new_list = []
     for protein_str in protein_list:
-        if not (protein_str.startswith(label_train_str)):
+        if not (protein_str.startswith(label_train_str) or protein_str.startswith(label_reserve_str)):
             if protein_str not in new_list:
                 new_list.append(protein_str)
     return new_list
 
+# remove protein not forward and testing
+def remove_duplicate_protein(protein_list):
+    new_list = []
+    for protein_str in protein_list:
+        if protein_str not in new_list:
+            new_list.append(protein_str)
+    return new_list
+
+def findOccurences(s, ch):
+    return len([i for i, letter in enumerate(s) if letter == ch])
 
 FDR_parameter = 1.0
 # # FDR calculator
@@ -253,4 +263,57 @@ def check_file_exist(filename):
     except IOError as _e:
         print >> sys.stderr, '\nCannot open', filename
         die("Program exit!")
-        
+
+fNeutronMass = 1.00867108694132 # it is Neutron mass
+def get_mass_diff(measured_mass, calculated_mass):
+    fDiff = calculated_mass - measured_mass
+    fTemp = fDiff
+    fCeil = 0
+    fFloor = 0
+    if fDiff >= 0:
+        fDiff = fTemp
+        fCeil = math.ceil(fTemp)*fNeutronMass
+        fFloor = math.floor(fTemp)*fNeutronMass
+        if fFloor > fTemp:
+            fFloor -= fNeutronMass
+        if fCeil - fNeutronMass > fTemp:
+            fCeil -= fNeutronMass
+        if fTemp > fCeil - fTemp:
+            fTemp = fCeil - fTemp
+        if fDiff > fDiff - fFloor:
+            fDiff = abs(fDiff - fFloor)
+        if abs(fTemp) < abs(fDiff):
+            fDiff = fTemp
+            dM = -fTemp
+        else:
+            dM = fDiff
+    else:
+        fCeil = math.ceil(fDiff)*fNeutronMass
+        if fCeil < fDiff:
+            fCeil += fNeutronMass
+        fFloor = math.floor(fDiff)*fNeutronMass
+        if fFloor + fNeutronMass < fDiff:
+            fFloor += fNeutronMass
+        fDiff = fTemp
+        if abs(fTemp) > fCeil - fTemp:
+            fTemp = fCeil - fTemp
+        if abs(fDiff) > fDiff - fFloor:
+            fDiff = fDiff - fFloor
+        fTemp = abs(fTemp)
+        fDiff = abs(fDiff)
+        if fTemp < fDiff:
+            fDiff = fTemp
+            dM = -fTemp
+        else:
+            dM = fDiff
+            
+    fMassDiff = fDiff
+    return dM, fMassDiff
+
+
+def get_num_missed_cleavage_sites(sIdentifiedSeq, sResiduesBeforeCleavage = "KR", sResiduesAfterCleavage = "ACDEFGHIJKLMNPQRSTVWY"):
+    count_int = 0
+    for i in range(len(sIdentifiedSeq) - 1):
+        if sIdentifiedSeq[i] in sResiduesBeforeCleavage and sIdentifiedSeq[i + 1] in sResiduesAfterCleavage:
+            count_int += 1
+    return count_int

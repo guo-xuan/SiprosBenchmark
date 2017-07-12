@@ -463,7 +463,7 @@ def try_fdr_ecoli(psm_list_sorted, fdr_f):
 def get_fdr_at_3_levels():
     # input_file = '/media/xgo/Seagate/Proteomics/Experiments/Benchmark/Comet/D2/pin/all_complete_protein.txt'
     # input_file = '/media/xgo/Seagate/Proteomics/Experiments/Benchmark/Comet/09272013/pin/all.txt'
-    input_file = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/Comet/MS2_ecoli/pin/all.txt'
+    input_file = '/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Myrimatch_4_percolator/D7/all.txt'
     # global shu_str
     # shu_str = 'TestRxx_'
     # input_file = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Comet/1002/pin/all_complete_protein.txt"
@@ -486,7 +486,7 @@ def get_fdr_at_3_levels():
 def get_fdr_at_3_levels_ecoli():
     # input_file = '/media/xgo/Seagate/Proteomics/Experiments/Benchmark/Comet/D2/pin/all_complete_protein.txt'
     # input_file = '/media/xgo/Seagate/Proteomics/Experiments/Benchmark/Comet/09272013/pin/all.txt'
-    input_file = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/SiprosEnsemble/soil/SiprosEnsemblePercolator/all.txt'
+    input_file = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/Myrimatch/soil/all.txt'
     # global shu_str
     # shu_str = 'TestRxx_'
     # input_file = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Comet/1002/pin/all_complete_protein.txt"
@@ -509,15 +509,15 @@ def get_fdr_at_3_levels_ecoli():
     print("get FDR at 3 level is Done.")
     
 def main(argv=None):
-    '''
+    
     # get fdr at 0.5 pct, 1 pct, and 2 pct
     get_fdr_at_3_levels()
+    
+    
     '''
-    
-    
     # ecoli mixed with other database, show the true results
     get_fdr_at_3_levels_ecoli()
-    
+    '''
     
     print("All done.")
 

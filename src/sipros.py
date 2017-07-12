@@ -353,44 +353,16 @@ def parse_options(argv):
 def protein_type(protein_sequence, lProtein=None):
     sProteins = protein_sequence.replace('{', '')
     sProteins = sProteins.replace('}', '')
-    asProteins = sProteins.split(',')
+    protein_list = sProteins.split(',')
     if lProtein != None:
         del lProtein[:]
-        for sProtein in asProteins:
+        for sProtein in protein_list:
             sProtein = sProtein.strip()
             if sProtein not in lProtein:
                 lProtein.append(sProtein)
+                
     
-    if label_reserve_str != '':
-        if label_train_str != '':
-            for sProtein in asProteins:
-                if not (sProtein.startswith(label_train_str) or sProtein.startswith(label_test_str) or sProtein.startswith(label_reserve_str)):
-                    return LabelFwd
-        else:
-            for sProtein in asProteins:
-                if not (sProtein.startswith(label_test_str) or sProtein.startswith(label_reserve_str)):
-                    return LabelFwd            
-    else:
-        if label_train_str != '':
-            for sProtein in asProteins:
-                if not (sProtein.startswith(label_train_str) or sProtein.startswith(label_test_str)):
-                    return LabelFwd
-        else:
-            for sProtein in asProteins:
-                if not (sProtein.startswith(label_test_str)):
-                    return LabelFwd
-    
-    if label_test_str != '':
-        for sProtein in asProteins:
-            if sProtein.startswith(label_test_str):
-                return LabelTest
-    
-    if label_reserve_str != '':
-        for sProtein in asProteins:
-            if sProtein.startswith(label_reserve_str):
-                return LabelRevReserve
-    
-    return LabelRevTrain
+    return Settings.get_protein_type(protein_list)
 
 # # read the psm table
 def read_psm_table(input_file):
@@ -1430,10 +1402,10 @@ def generatePINPercolator(psm_list, output_str):
                 print("error mass difference")
             row_list.append(str(psm.fMassDiff)) # absdM
             for i in range(1, 5): # Charge 1-4
-                if psm.ParentCharge > i:
-                    row_list.append("0")
-                else:
+                if psm.ParentCharge == i:
                     row_list.append("1")
+                else:
+                    row_list.append("0")
             if psm.ParentCharge > 5: # Charge5
                 row_list.append("1")
             else:
@@ -1553,21 +1525,101 @@ def get_pin_sipros3_wdp_ensemble(input_tab_file_str, config_file_str, output_fil
     generatePINPercolator_WDP(psm_list, output_file_str)
     
     print('get_pin_sipros3_wdp_ensemble is done.')
+    
+def get_pep_from_psm_table(input_file_str, output_file_str):
+    
+    pep_set = set()
+    
+    with open(input_file_str, 'r') as fr:
+        header_str = fr.readline()
+        header_split_list = header_str.split('\t')
+        original_pep_idx = header_split_list.index('OriginalPeptide')
+        with open(output_file_str, 'w') as fw:
+            for line_str in fr:
+                split_list = line_str.strip().split('\t')
+                pep_set.add(split_list[original_pep_idx][1:-1])
+            for pep in pep_set:
+                fw.write(pep)
+                fw.write('\n')
+    print("get_pep_from_psm_table is done.")
+    
+def complete_proteins_and_clean(input_file_str, pep_sip_file_str, output_file_str):
+    
+    pep_pro_dict = {}
+    with open(pep_sip_file_str, 'r') as fr:
+        for line_str in fr:
+            split_list = line_str.strip().split('\t')
+            if len(split_list) < 2: # peptide too short or too long not in the sip file
+                continue
+            pro_list = split_list[1:]
+            pro_list = Settings.remove_duplicate_protein(pro_list)
+            if split_list[0] in pep_pro_dict:
+                l = pep_pro_dict[split_list[0]]
+                for pro in pro_list:
+                    if pro not in l:
+                        l.append(pro)
+            else:
+                l = []
+                pep_pro_dict[split_list[0]] = l
+                for pro in pro_list:
+                    if pro not in l:
+                        l.append(pro)    
+
+    with open(input_file_str, 'r') as fr:
+        header_str = fr.readline()
+        header_split_list = header_str.split('\t')
+        original_pep_idx = header_split_list.index('OriginalPeptide')
+        protein_idx = header_split_list.index('ProteinNames')
+        with open(output_file_str, 'w') as fw:
+            fw.write(header_str)
+            for line_str in fr:
+                split_list = line_str.split('\t')
+                pep_str = split_list[original_pep_idx]
+                if len(pep_str) < 9 or len(pep_str) > 62:
+                    continue
+                pro_list = []
+                if pep_str in pep_pro_dict:
+                    pro_list = pep_pro_dict[pep_str]
+                    
+                protein_str = split_list[protein_idx]
+                protein_original_list = protein_str[1:-1].split(',')
+                for one_protein in protein_original_list:
+                    if one_protein not in pro_list:
+                        pro_list.append(one_protein)
+                split_list[protein_idx] = '{' + ','.join(pro_list) + '}'
+                
+                fw.write('\t'.join(split_list))
+    
+    print("complete_proteins_and_clean is done.")
+         
 
 def main(argv=None):
+    '''
+    # extract peptides from pin files
+    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/Myrimatch_Comet_MsGF_4_SiprosEnsemble/marine/marine.tab"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/Myrimatch_Comet_MsGF_4_SiprosEnsemble/marine/marine_pep"
+    get_pep_from_psm_table(input_file_str, output_file_str)
+    '''
     
+    # complete the proteins and remove too short or too long peptides, also correct lables
+    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Msgf_Comet_Myrimatch_4_Siprosensemble/D10/D10.tab"
+    pep_sip_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Msgf_Comet_Myrimatch_4_Siprosensemble/marine.sip"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Msgf_Comet_Myrimatch_4_Siprosensemble/D10/D10_corrected.tab"
+    complete_proteins_and_clean(input_file_str, pep_sip_file_str, output_file_str)
+    
+    '''
     # generate sipros ensemble for percolator    
-    input_tab_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/SiprosEnsemble/ecoli/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_Run.tab"
-    config_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Data/Configs/SiprosEnsemble/ecoli.cfg"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/SiprosEnsemble/ecoli/SiprosEnsemblePercolator/all.pin"
+    input_tab_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Sipros10/1002/Angelo_10022013_P1_3040cm_MB_FASP_Elite_Run.tab"
+    config_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/1Da_5Windows_Angelo.cfg"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Sipros10/1002/SiprosEnsemblePercolator/all.pin"
     get_pin_sipros_ensemble(input_tab_file_str, config_file_str, output_file_str)
-    
+    '''
     
     '''
     # generate sipros 3 wdp for percolator
-    input_tab_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/SiprosEnsemble/marine/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_Run.tab"
-    config_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Data/Configs/SiprosEnsemble/marine.cfg"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/SiprosEnsemble/marine/Sipros3WdpPercolator/all.pin"
+    input_tab_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Sipros10/D7/OSU_D7_FASP_Elite_03172014.tab"
+    config_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/1Da_5Windows_Osu.cfg"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Sipros10/D7/Sipros3Wdp_Percolator/all.pin"
     get_pin_sipros3_wdp_ensemble(input_tab_file_str, config_file_str, output_file_str)
     '''
     

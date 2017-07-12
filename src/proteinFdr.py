@@ -797,9 +797,11 @@ def main(argv=None):
     # parse options
     # (working_dir, config_filename) = parse_options(argv)
 
-    working_dir = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/SiprosEnsemble/soil/SiprosEnsemblePercolator/fdr_0.02/"
-    config_filename = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Data/Configs/SiprosEnsemble/soil.cfg"
-
+    working_dir = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Msgf_Comet_Myrimatch_4_Siprosensemble/D7/"
+    config_filename = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/1Da_5Windows_Angelo.cfg" 
+    
+    print(working_dir)
+    
     config_dict = parse_config(config_filename)
 
     # Get .pep.txt output file(s) in working directory
