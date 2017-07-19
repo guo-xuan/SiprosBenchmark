@@ -797,8 +797,8 @@ def main(argv=None):
     # parse options
     # (working_dir, config_filename) = parse_options(argv)
 
-    working_dir = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Msgf_Comet_Myrimatch_4_Siprosensemble/D7/"
-    config_filename = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/1Da_5Windows_Angelo.cfg" 
+    working_dir = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/sipros_ensemble/marine/"
+    config_filename = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/config_files/sipros_ensemble/marine.cfg" 
     
     print(working_dir)
     
@@ -823,7 +823,7 @@ def main(argv=None):
     target_protein_fdr_list = [0.5, 1.0, 2.0]
     
     for target_protein_fdr in target_protein_fdr_list:
-        increasing_rate = 0.003
+        increasing_rate = 0.1
         num_try = 0
         while True:
             fdr = fdr_float + increasing_rate
