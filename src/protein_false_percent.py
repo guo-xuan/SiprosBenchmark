@@ -23,7 +23,8 @@ def get_version():
    new program should handle both types of sip files
 """
 
-
+prefix_ecoli_str = 'lcl'
+prefix_test_str = 'TestRev_'
 
 ## Import classes
 
@@ -313,12 +314,10 @@ def get_pep_score_cutoff(pep_score_targetmatch_sorted_list, fdr):
     best_fwr = 0
     best_shu = 0
     score_cutoff = 0
-    real_fdr = 0.0
-    
     for one in pep_score_targetmatch_sorted_list:
         if one[1] == 'T':
             fwr_int += 1
-        else:
+        elif one[1] == 'F':
             rev_int += 1
         
         (FDR_accept, FDR_value) = FDR_calculator(rev_int, fwr_int)
@@ -326,9 +325,8 @@ def get_pep_score_cutoff(pep_score_targetmatch_sorted_list, fdr):
             best_fwr = fwr_int
             best_shu = rev_int
             score_cutoff = one[0]
-            real_fdr = FDR_value
     
-    return score_cutoff, real_fdr
+    return score_cutoff
 
 # Read and load pep and psm files
 def read_run_files(run_num_dict, pep_score_cutoff=None):
@@ -704,15 +702,47 @@ def check_decoy_match(ProteinNames, decoy_prefix):
     else:
         match_type_list.append(match_type)
     # TF -> True or False(decoy match)
-    TF = False
-
+    TF = True
+    
+    reverse_num = 0
+    
     # for loop of proteins
     for match_item in match_type_list:
         # if at least one of matches is True, then match is True
-        if not match_item.startswith(decoy_prefix):
-            TF = True 
+        if match_item.startswith(prefix_ecoli_str):
+            TF = False 
             break
+        elif match_item.startswith(prefix_test_str):
+            reverse_num += 1
+            
+    if reverse_num == len(match_type_list):
+        TF = False
+    return TF
 
+## check decoy match
+def check_test_match(ProteinNames):
+
+    # match type (correct or decoy) and strip
+    match_type = ProteinNames
+    match_type_list = []
+
+    if match_type.startswith("{"):
+        # if starts with {}, then delete parenthesis { }
+        match_type = match_type[1:-1]
+        # sometimes multiple proteins
+        match_type_list = re.split(r"\s*[,]\s*", match_type.strip())
+    else:
+        match_type_list.append(match_type)
+    # TF -> True or False(decoy match)
+    TF = False
+    
+    # for loop of proteins
+    for match_item in match_type_list:
+        # if at least one of matches is True, then match is True
+        if match_item.startswith(prefix_test_str):
+            TF = True
+            return TF
+        
     return TF
 
 ## check decoy match
@@ -735,7 +765,7 @@ def check_target_match(ProteinNames, target_prefix):
     # for loop of proteins
     for match_item in match_type_list:
         # if at least one of matches is True, then match is True
-        if match_item.startswith(target_prefix):
+        if match_item.startswith(prefix_ecoli_str):
             TP = True 
             break
 
@@ -792,37 +822,41 @@ def report_output(config_dict,
     decoy_proteins_before_filtering = 0
     for key, _val in pro_pep_dict.items():
         check_decoy_match_val = check_decoy_match(key, decoy_prefix)
-        if check_decoy_match_val is False:
+        if check_decoy_match_val is True:
             decoy_proteins_before_filtering += 1
     _target_proteins_before_filtering = int(total_proteins_before_filtering) - int(decoy_proteins_before_filtering)
 
     # total number of identified proteins
     total_proteins_after_filtering = len(pro_greedy_list)
-    decoy_proteins_after_filtering = 0
+    false_target_proteins_after_filtering = 0
     true_target_proteins_after_filtering = 0
+    true_decoy_proteins_after_filtering = 0
     for pro_one in pro_greedy_list:
-        check_decoy_match_val = check_decoy_match(pro_one, decoy_prefix)
-        if check_decoy_match_val is False:
-            decoy_proteins_after_filtering += 1
-        if target_prefix is not None:
-            check_target_match_val = check_target_match(pro_one, target_prefix)
+        check_target_match_val = check_target_match(pro_one, target_prefix)
+        if check_target_match_val is True:
+            true_target_proteins_after_filtering += 1
+        else:
+            check_target_match_val = check_ecoli_match(pro_one, pro_pep_dict, ecoli_database_str)
             if check_target_match_val is True:
                 true_target_proteins_after_filtering += 1
             else:
-                check_target_match_val = check_ecoli_match(pro_one, pro_pep_dict, ecoli_database_str)
-                if check_target_match_val is True:
-                    true_target_proteins_after_filtering += 1
-    target_proteins_after_filtering = int(total_proteins_after_filtering) - int(decoy_proteins_after_filtering)
+                check_decoy_match_val = check_decoy_match(pro_one, decoy_prefix)
+                if check_decoy_match_val is True:
+                    false_target_proteins_after_filtering += 1
+                else:
+                    true_decoy_proteins_after_filtering += 1
+    target_proteins_after_filtering = false_target_proteins_after_filtering + true_target_proteins_after_filtering
 
     # protein FDR
     protein_fdr = 0.0
     if float(total_proteins_after_filtering) != 0:
-        protein_fdr = divide(float(decoy_proteins_after_filtering), float(total_proteins_after_filtering))
+        protein_fdr = divide(float(false_target_proteins_after_filtering), float(total_proteins_after_filtering))
     protein_fdr = PrettyFloat(protein_fdr)
     
-    print("{:,d} ({:.3f}%) ({:,d})".format(target_proteins_after_filtering, 3.0*100.0*float(decoy_proteins_after_filtering)/float(target_proteins_after_filtering), true_target_proteins_after_filtering))
-
-    return ((3*100.0*float(decoy_proteins_after_filtering)/float(target_proteins_after_filtering)) , target_proteins_after_filtering, true_target_proteins_after_filtering)
+    print("{:,d} ({:.3f}%) ({:,d})".format(true_target_proteins_after_filtering, 100.0*float(false_target_proteins_after_filtering)/float(true_target_proteins_after_filtering), false_target_proteins_after_filtering))
+    print("{:.3f}%".format(3*100*(true_decoy_proteins_after_filtering/target_proteins_after_filtering)))
+    
+    return ((100.0*float(false_target_proteins_after_filtering)/float(true_target_proteins_after_filtering)) , target_proteins_after_filtering, true_target_proteins_after_filtering)
 
 
 def get_ecoli_protein(database_str: str) -> str :
@@ -863,22 +897,22 @@ def main(argv=None):
             
     fdr_float = 0.0000
     pep_score_targetmatch_sorted_list = get_pep_score_targetmatch(run_num_dict)
-    try_max = 10
-    target_protein_fdr_list = [1.0]
+    try_max = 20
+    target_protein_fdr_list = [5]
     
     ecoli_database_file_str = '/media/xgo/Seagate/Proteomics/Data/Ecoli/Ecoli_K12_MG1655.fasta'
     global ecoli_database_str
     ecoli_database_str = get_ecoli_protein(ecoli_database_file_str)
     
     for target_protein_fdr in target_protein_fdr_list:
-        increasing_rate = 0.003
+        increasing_rate = 0.03
         num_try = 0
         while True:
             fdr = fdr_float + increasing_rate
-            score_cutoff, real_fdr = get_pep_score_cutoff(pep_score_targetmatch_sorted_list, fdr)
+            score_cutoff = get_pep_score_cutoff(pep_score_targetmatch_sorted_list, fdr)
             (pep_data_dict, psm_data_dict, pro_pep_dict, pep_pro_dict) = read_run_files(run_num_dict, score_cutoff)
             (pro_greedy_list) = greedy_alg(config_dict, pro_pep_dict, pep_pro_dict)
-            print(str(real_fdr))
+            print(str(fdr))
             (protein_fdr, protein_num, true_protein_num) = report_output(config_dict,
                                             run_num_dict,
                                             psm_run_num_dict,

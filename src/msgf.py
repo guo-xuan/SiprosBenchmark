@@ -140,21 +140,21 @@ def correct_scan_number(input_xml_str, input_mzid_str, output_xml_str):
     print('correct_scan_number is done: ' + input_xml_str)
 
 def main():
-    '''
+    
     # correct the protein labels
-    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/soil/all.pin"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/soil/all_corrected.pin"
+    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/pin/all.pin"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/pin/all_corrected.pin"
     correct_pin(input_file_str, output_file_str)
-    '''
+    
     
     '''
     # correct the scan number
     n = 20
-    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/marine_new/xml/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_subfile'
+    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/pepxml/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_subfile'
     input_suffix_str = '.pepXML'
-    mzid_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/marine_new/'
+    mzid_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/mzid/'
     mzid_suffix_str = '_msgfplus.mzid'
-    output_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/marine_new/xml/correct_pepxml/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_subfile'
+    output_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/corrected_pepxml/all_subfile'
     for i in range(n):
         input_file_str = input_prefix_str + str(i) + input_suffix_str
         mzid_file_str = mzid_prefix_str + str(i) + mzid_suffix_str
@@ -164,23 +164,23 @@ def main():
     
     '''
     # clean merged pep xml files
-    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/ecoli_new/xml/correct_pepxml/all.pepXML"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/ecoli_new/xml/correct_pepxml/ecoli_msgf.pep.xml"
+    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/corrected_pepxml/all.pepXML"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/corrected_pepxml/soil_subsample_msgf.pep.xml"
     clean_merged_pepXML(input_file_str, output_file_str)
     '''
     
-    
+    '''
     # before iProphet
-    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/ecoli_new/xml/correct_pepxml/ecoli_msgf.pep.xml"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/ecoli_new/xml/correct_pepxml/ecoli_msgf_corrected.pep.xml"
+    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/corrected_pepxml/soil_subsample_msgf.pep.xml"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil_subsample/corrected_pepxml/soil_subsample_msgf_corrected.pep.xml"
     before_iProphet(input_file_str, output_file_str)
-    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/marine_new/xml/correct_pepxml/marine_msgf.pep.xml"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/marine_new/xml/correct_pepxml/marine_msgf_corrected.pep.xml"
-    before_iProphet(input_file_str, output_file_str)
-    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/soil/xml/correct_pepxml/soil_msgf.pep.xml"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/Ecoli/Results/MsGF/soil/xml/correct_pepxml/soil_msgf_corrected.pep.xml"
-    before_iProphet(input_file_str, output_file_str)
-    
+    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/marine/corrected_pepxml/marine_msgf.pep.xml"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/marine/corrected_pepxml/marine_msgf_corrected.pep.xml"
+    # before_iProphet(input_file_str, output_file_str)
+    input_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil/corrected_pepxml/soil_msgf.pep.xml"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil/corrected_pepxml/soil_msgf_corrected.pep.xml"
+    # before_iProphet(input_file_str, output_file_str)
+    '''
     print('All done.')
     
 if __name__ == '__main__':

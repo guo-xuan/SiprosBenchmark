@@ -406,11 +406,11 @@ def get_id_pair_from_mzid_4msgf(input_file_str):
 
 def read_msgf_results(psm_dict):
     
-    n = 20
-    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Msgf/D7/pepxml/OSU_D7_FASP_Elite_03172014_subfile'
+    n = 400
+    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil/pepxml/all_subfile'
     input_suffix_str = '.pepXML'
-    mzid_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Msgf/D7/mzid/OSU_D7_FASP_Elite_03172014_subfile'
-    mzid_suffix_str = '_0.mzid'
+    mzid_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/msgf/soil/mzid/'
+    mzid_suffix_str = '_msgfplus.mzid'
     
     for i in range(n):
         input_file_str = input_prefix_str + str(i) + input_suffix_str
@@ -420,7 +420,7 @@ def read_msgf_results(psm_dict):
 
 def read_comet_results(psm_dict):
     n = 20
-    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Comet/D7/pepxml/OSU_D7_FASP_Elite_03172014_subfile'
+    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/comet/soil/corrected_pepxml/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_subfile'
     input_suffix_str = '.pep.xml'
     
     for i in range(n):
@@ -429,7 +429,7 @@ def read_comet_results(psm_dict):
 
 def read_myrimatch_results(psm_dict):
     n = 20
-    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Myrimatch/D7/OSU_D7_FASP_Elite_03172014_subfile'
+    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/myrimatch/soil/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_subfile'
     input_suffix_str = '.pepXML'
     
     for i in range(n):
@@ -464,7 +464,7 @@ def main():
     read_myrimatch_results(psm_dict)
     
     # output results
-    output_file_str = '/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Myrimatch_4_percolator/temp/D7.tab'
+    output_file_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/comet_myrimatch_msgf_4_sipros_ensemble/soil/soil.tab'
     write_output(psm_dict, output_file_str)
     
     print('All done.')

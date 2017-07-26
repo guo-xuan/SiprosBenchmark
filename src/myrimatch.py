@@ -148,7 +148,7 @@ def read_one_pep_xml_myrimatch(input_file_str, psm_list):
 
 def read_myrimatch_results(psm_dict):
     n = 20
-    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Myrimatch/D10/OSU_D10_FASP_Elite_03202014_subfile'
+    input_prefix_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/myrimatch/soil/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_subfile'
     input_suffix_str = '.pepXML'
     
     for i in range(n):
@@ -177,7 +177,7 @@ def main():
     read_myrimatch_results(psm_list)
     
     # output results
-    output_file_str = '/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Myrimatch_4_percolator/D10/all.pin'
+    output_file_str = '/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/myrimatch_4_percolator/soil/all.pin'
     write_output(psm_list, output_file_str)
     
     print('All done.')

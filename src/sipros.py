@@ -1607,19 +1607,19 @@ def main(argv=None):
     output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Msgf_Comet_Myrimatch_4_Siprosensemble/D10/D10_corrected.tab"
     complete_proteins_and_clean(input_file_str, pep_sip_file_str, output_file_str)
     
-    '''
+    
     # generate sipros ensemble for percolator    
-    input_tab_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Sipros10/1002/Angelo_10022013_P1_3040cm_MB_FASP_Elite_Run.tab"
-    config_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/1Da_5Windows_Angelo.cfg"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Sipros10/1002/SiprosEnsemblePercolator/all.pin"
+    input_tab_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/sipros_ensemble/soil/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_Run.tab"
+    config_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/config_files/sipros_ensemble/soil.cfg"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/sipros_ensemble_4_percolator/soil/all.pin"
     get_pin_sipros_ensemble(input_tab_file_str, config_file_str, output_file_str)
-    '''
+    
     
     '''
     # generate sipros 3 wdp for percolator
-    input_tab_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Sipros10/D7/OSU_D7_FASP_Elite_03172014.tab"
-    config_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/1Da_5Windows_Osu.cfg"
-    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/Sipros10/D7/Sipros3Wdp_Percolator/all.pin"
+    input_tab_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/sipros_ensemble/soil/EColi_Try_HCD_DE10ppm_CS_1000_NCE30_180_Run.tab"
+    config_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/config_files/sipros_ensemble/soil.cfg"
+    output_file_str = "/media/xgo/Seagate/Proteomics/Experiments/SiprosEnsemble/ecoli_samples/sipros3/soil/all.pin"
     get_pin_sipros3_wdp_ensemble(input_tab_file_str, config_file_str, output_file_str)
     '''
     

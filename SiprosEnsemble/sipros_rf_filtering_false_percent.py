@@ -447,6 +447,7 @@ class PSM:
         if self.ecoli_label is not LabelEcoli:
             if self.OriginalPeptide[1:-1] in ecoli_database_str:
                 self.ecoli_label = LabelEcoli
+                self.RealLabel = LabelFwd
 # # Version control
 def get_version():
     return "1.0.1 (Alpha)"
@@ -970,7 +971,7 @@ true_pep_num_list = []
 
 def relabel_ecoli(psm_list):
     
-    fdr = 0.01
+    fdr = 0.05
     list_sorted = sorted(psm_list, key=lambda x: (x.fPredictProbability) , reverse=True)
     T_num = 0
     F_num = 0
@@ -1032,14 +1033,12 @@ def relabel_ecoli(psm_list):
         if oPsm.fPredictProbability >= cutoff_probability:
             oPsm.relabel()
     
-
+    print("{:,d} ({:.2f}%)\t{:,d} ({:.2f}%)".format(Best_list[0], (100* float(Best_list[2])/float(Best_list[0])), best_fwr_pep, (100.0*float(best_rev_pep)/float(best_fwr_pep))))
     
 def show_Fdr_varied(psm_list, fdr):
     
     # list_sorted = sorted(psm_list, key=lambda x: (x.fPredictProbability, 1 - x.fRankProduct) , reverse=True)
     list_sorted = sorted(psm_list, key=lambda x: (x.fPredictProbability) , reverse=True)
-    T_num = 0
-    F_num = 0
     Fwd_num = 0
     train_num = 0
     rev_num = 0
@@ -1059,6 +1058,9 @@ def show_Fdr_varied(psm_list, fdr):
     best_fwr_pep = 0
     best_rev_pep = 0
     
+    psm_fdr_float = 0.0
+    pep_fdr_float = 0.0
+    
     # without considering training label
     for oPsm in list_sorted:
         if oPsm.TrainingLabel == LabelFiltered:
@@ -1076,28 +1078,28 @@ def show_Fdr_varied(psm_list, fdr):
                 peptide_set.add(pep_str)
         
         if oPsm.RealLabel == LabelFwd:
-            T_num += 1
             Fwd_num += 1
             if oPsm.ecoli_label == LabelEcoli:
                 ecoli_num += 1
         elif oPsm.RealLabel == LabelRevTrain:
-            F_num += 1
             train_num += 1
         elif oPsm.RealLabel == LabelTest:
-            T_num += 1
             rev_num += 1
-        (FDR_accept, FDR_value) = FDR_calculator(rev_num, Fwd_num)
+        (FDR_accept, FDR_value) = FDR_calculator(Fwd_num - ecoli_num, ecoli_num)
         if (FDR_accept is True) and (FDR_value <= fdr): #(rev_num <= shuffle_num_control[sKey]):  # and (rev_num <= 618) and (FDR_value <= 0.01)
             if (Best_list[0] + Best_list[2]) < (Fwd_num + rev_num):
                 Best_list = [Fwd_num, train_num, rev_num]
                 best_ecoli_num = ecoli_num
                 cutoff_probability = oPsm.fPredictProbability
-        (FDR_accept, FDR_value) = FDR_calculator(num_rev_pep, num_fwr_pep)
+                (FDR_accept, psm_fdr_float) = FDR_calculator(rev_num, Fwd_num)
+                
+        (FDR_accept, FDR_value) = FDR_calculator(num_fwr_pep - num_ecoli_pep, num_ecoli_pep)
         if (FDR_accept is True) and (FDR_value <= fdr): #(rev_num <= shuffle_num_control[sKey]):  # and (rev_num <= 618) and (FDR_value <= 0.01)
             if (best_fwr_pep + best_rev_pep) < (num_fwr_pep + num_rev_pep):        
                 best_fwr_pep = num_fwr_pep
                 best_rev_pep = num_rev_pep
                 best_ecoli_pep = num_ecoli_pep
+                (FDR_accept, pep_fdr_float) = FDR_calculator(num_rev_pep, num_fwr_pep)
             
     for oPsm in list_sorted:
         if oPsm.fPredictProbability >= cutoff_probability:
@@ -1110,6 +1112,7 @@ def show_Fdr_varied(psm_list, fdr):
     true_psm_num_list.append(best_ecoli_num)
     pep_num_list.append(best_fwr_pep)
     true_pep_num_list.append(best_ecoli_pep)
+    print("psm_fdr, pep_fdr:\t{:.2f}%\t{:.2f}%".format(3*100*psm_fdr_float, 3*100*pep_fdr_float))
     return psm_filtered_list
 
 def show_Fdr(psm_list, sKey, fdr=None):
@@ -3138,8 +3141,8 @@ def logistic_regression_no_category(psm_dict, psm_list, psm_neg_list, fdr_given=
     
     # psm_new_list = mass_filter(psm_new_list)
     relabel_ecoli(psm_new_list)
-    for fdr_f in [0.005, 0.01, 0.02]:
-        temp_list = show_Fdr_varied(psm_new_list, fdr_f/3.0)
+    for fdr_f in [0.05]:
+        temp_list = show_Fdr_varied(psm_new_list, fdr_f)
         '''
         folder_str = output_folder + 'fdr_' + str(fdr_f) +'/'
         if not os.path.exists(folder_str):
@@ -4330,11 +4333,11 @@ def generate_Prophet_features_test(lPsm, config_dict):
             oPsm.UPSC = 1
         else:
             oPsm.UPSC = 0
-        oPsm.SPSC = max_linked_unique_per_psm + max_linked_balanced_shared_per_psm # max_linked_shared_per_psm
+        oPsm.SPSC = max_linked_unique_per_psm + max_linked_balanced_shared_per_psm #max_linked_shared_per_psm
         # oPsm.SPSC = float(max_linked_unique_per_psm)/float(len(oPsm.protein_list)) + float(max_linked_shared_per_psm)/float(len(oPsm.protein_list))
         # oPsm.SPSC = max_per_psm
         
-        # oPsm.UPSC = max_unique_per_psm
+        oPsm.UPSC = max_linked_balanced_shared_per_psm # max_unique_per_psm
         # oPsm.SPSC = max_shared_per_psm
         
         '''
@@ -4442,10 +4445,12 @@ class Peptide:
         self.PSMs.append(oPsm.FileName+'['+str(oPsm.ScanNumber) +']')
         self.ScanType.append(oPsm.ScanType)
         self.SearchName.append(oPsm.SearchName)
-        if oPsm.ecoli_label == LabelEcoli or oPsm.RealLabel == LabelFwd:
+        if oPsm.ecoli_label == LabelEcoli:
             self.TargetMatch = 'T'
-        else:
+        elif oPsm.RealLabel == LabelFwd:
             self.TargetMatch = 'F'
+        else:
+            self.TargetMatch = 'X'
         
     def set(self, oPsm):
         self.IdentifiedPeptide = oPsm.IdentifiedPeptide
@@ -4458,10 +4463,12 @@ class Peptide:
         self.PSMs.append(oPsm.FileName+'['+str(oPsm.ScanNumber) +']')
         self.ScanType.append(oPsm.ScanType)
         self.SearchName.append(oPsm.SearchName)
-        if oPsm.ecoli_label == LabelEcoli or oPsm.RealLabel == LabelFwd:
+        if oPsm.ecoli_label == LabelEcoli:
             self.TargetMatch = 'T'
-        else:
+        elif oPsm.RealLabel == LabelFwd:
             self.TargetMatch = 'F'
+        else:
+            self.TargetMatch = 'X'
         
     def __repr__(self):
         l = [self.IdentifiedPeptide,
@@ -4583,10 +4590,12 @@ def generate_psm_pep_txt(input_file, out_folder, psm_filtered_list):
             fw.write('\t')
             fw.write(str(len(oPsm.protein_list)))
             fw.write('\t')
-            if oPsm.ecoli_label == LabelEcoli or oPsm.RealLabel == LabelFwd:
+            if oPsm.ecoli_label == LabelEcoli:
                 fw.write('T')
-            else:
+            elif oPsm.RealLabel == LabelFwd:
                 fw.write('F')
+            else:
+                fw.write('X')
             fw.write('\n')
             
     print("U\tMajor\tMinor\tD")
@@ -5048,7 +5057,7 @@ def main(argv=None):
     # deep learning
     # psm_filtered_list = test_DeepLearning(psm_dict, psm_list, psm_neg_list, 0.01/3, None)
     
-    psm_filtered_list = logistic_regression_no_category(psm_dict, psm_list, psm_neg_list, 0.005/3, None, output_folder, input_file, config_dict)
+    psm_filtered_list = logistic_regression_no_category(psm_dict, psm_list, psm_neg_list, 0.02, None, output_folder, input_file, config_dict)
     # logistic_regression_2_LR(psm_dict, psm_list, psm_neg_list, 0.01, None, output_folder, input_file)
     # train bias test
     # psm_filtered_list = test_train_bias(psm_dict, psm_list, psm_neg_list, 0.01, None)
