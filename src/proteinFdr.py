@@ -825,7 +825,7 @@ def report_output(config_dict,
     return ((3*100.0*float(decoy_proteins_after_filtering)/float(target_proteins_after_filtering)) , target_proteins_after_filtering, true_target_proteins_after_filtering)
 
 
-def get_ecoli_protein(database_str: str) -> str :
+def get_ecoli_protein(database_str):
     database_list = []
     with open(database_str, 'r') as fr:
         for line_str in fr:
@@ -841,8 +841,8 @@ def main(argv=None):
     # parse options
     # (working_dir, config_filename) = parse_options(argv)
 
-    working_dir = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/sipros_ensemble/upload_results/ecoli_subsampled_soil_subsampled/pep_0.01/"
-    config_filename = "/media/xgo/Seagate/Proteomics/Experiments/BenchmarkRev/sipros_ensemble/upload_results/soil_subsample.cfg" 
+    working_dir = "/media/naux/naux_data/proteomics/experiments/sipros_ensemble/soil_marine/sipros_ensemble/upload_results/d10/psm_0.01/"
+    config_filename = "/media/naux/naux_data/proteomics/experiments/sipros_ensemble/soil_marine/sipros_ensemble/upload_results/0820/psm_0.01/soil.cfg" 
     
     print(working_dir)
     
@@ -865,11 +865,11 @@ def main(argv=None):
     pep_score_targetmatch_sorted_list = get_pep_score_targetmatch(run_num_dict)
     try_max = 10
     target_protein_fdr_list = [1.0]
-    
+    '''
     ecoli_database_file_str = '/media/xgo/Seagate/Proteomics/Data/Ecoli/Ecoli_K12_MG1655.fasta'
     global ecoli_database_str
     ecoli_database_str = get_ecoli_protein(ecoli_database_file_str)
-    
+    '''
     for target_protein_fdr in target_protein_fdr_list:
         increasing_rate = 0.003
         num_try = 0
@@ -886,7 +886,8 @@ def main(argv=None):
                                             psm_data_dict,
                                             pro_pep_dict,
                                             pep_pro_dict,
-                                            pro_greedy_list)
+                                            pro_greedy_list,
+                                            target_prefix = None)
             num_try += 1
             if abs(protein_fdr - target_protein_fdr) < 0.01 or num_try > try_max:
                 print('Done')
